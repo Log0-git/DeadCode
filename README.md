@@ -8,7 +8,7 @@
   
 mirrors:
   
-[yougame.biz](https://yougame.biz/threads/) / [crystalpvp.ru](https://crystalpvp.ru/deadcode/)
+[yougame.biz](https://yougame.biz/threads/254102/) / [crystalpvp.ru](https://crystalpvp.ru/deadcode/)
 
 [plutosolutions telegram](https://t.me/plutosolutions)
   
