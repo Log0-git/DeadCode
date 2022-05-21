@@ -37,7 +37,7 @@ NOTE: everything below is going to be in russian because this client is made mai
   
 </div>
 
-+ Если у вас компьютер говно то у вас этот чит не запустится (не моя проблема)
++ Если у вас не запускается чит (пишет что все ок но нихуя) то обновите джаву ([клик](https://mega.nz/file/fOoEAQBa#xowIZlFHlfhGLI-XlBGyvx2OkC856r3jaAOt3hewJkw=)) и поставьте ее в настройках вашего лаунчера (это не моя проблема)
 + Если при запуске кряка вам пишет что порт 80/443 занят(ы) то посмотрите что их занимает и освободите порты
   
 <div align="center">
