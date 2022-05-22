@@ -82,6 +82,86 @@ original:
 	return original_GetAddrInfoExW( pName, pServiceName, dwNameSpace, lpNspId, hints, ppResult, timeout, lpOverlapped, lpCompletionRoutine, lpNameHandle );
 }
 
+typedef int( WINAPI* connectFn )( SOCKET, const sockaddr*, int );
+connectFn original_connect;
+
+int WINAPI hooked_connect( SOCKET socket, const sockaddr* name, int namelen )
+{
+	if( !name ) return original_connect( socket, name, namelen );
+
+	sockaddr_in sin;
+	memcpy( &sin, name, sizeof( sin ) );
+
+	const auto ip = inet_ntoa( sin.sin_addr );
+	const auto port = ntohs( sin.sin_port );
+
+	if( ip && ( port == 80 || port == 443 ) )
+	{
+		std::string strip = ip;
+		if( strip.starts_with( "192.168." ) || strip == "127.0.0.1" || strip == "0.0.0.0" )
+		{
+			if( port == 80 )
+				sin.sin_port = ntohs( 48888 );
+			else if( port == 443 )
+				sin.sin_port = ntohs( 49999 );
+
+			return original_connect( socket, ( sockaddr* )&sin, namelen );
+		}
+	}
+
+	return original_connect( socket, name, namelen );
+}
+
+typedef HINTERNET( WINAPI* InternetConnectAFn )( HINTERNET, LPCSTR, INTERNET_PORT, LPCSTR, LPCSTR, DWORD, DWORD, DWORD_PTR );
+InternetConnectAFn original_InternetConnectA;
+
+HINTERNET WINAPI hooked_InternetConnectA( HINTERNET hConnect, LPCSTR lpszServerName, INTERNET_PORT nServerPort, LPCSTR lpszUserName, LPCSTR lpszPassword, DWORD dwService, DWORD dwFlags, DWORD_PTR dwContext )
+{
+	if( !strcmp( lpszServerName, "deadcodehack.org" ) ||
+		!strcmp( lpszServerName, "localhost" ) ||
+		!strcmp( lpszServerName, "127.0.0.1" ) ||
+		!strcmp( lpszServerName, "api.ipify.org" ) )
+	{
+		if( nServerPort == 80 || nServerPort == 443 )
+		{
+			INTERNET_PORT newport = nServerPort;
+			if( nServerPort == 80 )
+				newport = 48888;
+			else if( nServerPort == 443 )
+				newport = 49999;
+
+			return original_InternetConnectA( hConnect, lpszServerName, newport, lpszUserName, lpszPassword, dwService, dwFlags, dwContext );
+		}
+	}
+
+	return original_InternetConnectA( hConnect, lpszServerName, nServerPort, lpszUserName, lpszPassword, dwService, dwFlags, dwContext );
+}
+
+typedef HINTERNET( WINAPI* InternetConnectWFn )( HINTERNET, LPCWSTR, INTERNET_PORT, LPCWSTR, LPCWSTR, DWORD, DWORD, DWORD_PTR );
+InternetConnectWFn original_InternetConnectW;
+
+HINTERNET WINAPI hooked_InternetConnectW( HINTERNET hConnect, LPCWSTR lpszServerName, INTERNET_PORT nServerPort, LPCWSTR lpszUserName, LPCWSTR lpszPassword, DWORD dwService, DWORD dwFlags, DWORD_PTR dwContext )
+{
+	if( !wcscmp( lpszServerName, L"deadcodehack.org" ) ||
+		!wcscmp( lpszServerName, L"localhost" ) ||
+		!wcscmp( lpszServerName, L"127.0.0.1" ) ||
+		!wcscmp( lpszServerName, L"api.ipify.org" ) )
+	{
+		if( nServerPort == 80 || nServerPort == 443 )
+		{
+			INTERNET_PORT newport = nServerPort;
+			if( nServerPort == 80 )
+				newport = 48888;
+			else if( nServerPort == 443 )
+				newport = 49999;
+
+			return original_InternetConnectW( hConnect, lpszServerName, newport, lpszUserName, lpszPassword, dwService, dwFlags, dwContext );
+		}
+	}
+
+	return original_InternetConnectW( hConnect, lpszServerName, nServerPort, lpszUserName, lpszPassword, dwService, dwFlags, dwContext );
+}
+
 // gamehooks.cpp
 bool HookJVM( );
 
@@ -102,6 +182,15 @@ bool Hook( )
 
 	original_GetAddrInfoExW = HookAPI< GetAddrInfoExWFn >( L"ws2_32.dll", "GetAddrInfoExW", hooked_GetAddrInfoExW );
 	if( !original_GetAddrInfoExW ) return false;
+
+	original_connect = HookAPI< connectFn >( L"ws2_32.dll", "connect", hooked_connect );
+	if( !original_connect ) return false;
+
+	original_InternetConnectA = HookAPI< InternetConnectAFn >( L"wininet.dll", "InternetConnectA", hooked_InternetConnectA );
+	if( !original_InternetConnectA ) return false;
+
+	original_InternetConnectW = HookAPI< InternetConnectWFn >( L"wininet.dll", "InternetConnectW", hooked_InternetConnectW );
+	if( !original_InternetConnectW ) return false;
 
 	if( !HookJVM( ) ) return false;
 

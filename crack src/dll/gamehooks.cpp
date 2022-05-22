@@ -9,7 +9,7 @@ template< typename T >
 T Hook( const char* name, void* address, void* newfunc )
 {
 	void* ret = nullptr;
-	
+
 	const auto status = MH_CreateHook( address, newfunc, ( LPVOID* )&ret );
 	if( status != MH_OK )
 	{
@@ -221,7 +221,7 @@ bool HookJVM( )
 
 	jsize vmcount = 0;
 	JNI_GetCreatedJavaVMs( 0, 0, &vmcount );
-	auto vms = new JavaVM*[ vmcount ];
+	auto vms = new JavaVM * [ vmcount ];
 	JNI_GetCreatedJavaVMs( vms, vmcount, &vmcount );
 
 	if( !vms || vmcount == 0 )
@@ -241,6 +241,47 @@ bool HookJVM( )
 		jvm->DetachCurrentThread( );
 		return false;
 	}
+
+	// получаем версию джавы
+	//wchar_t* path = new wchar_t[ MAX_PATH * sizeof( LPWSTR ) ];
+	//if( !GetModuleFileNameW( 0, path, MAX_PATH * sizeof( LPWSTR ) ) )
+	//	speak( "GetModuleFileNameW failed - couldn't get current EXE path" );
+	//else
+	//{
+	//	wprintf( L"[jewnative] path: [ %s ]\n", path );
+	//	fflush( stdout );
+
+	//	// если джава хуевая (в тл легаси по умолчанию стоит 8u51) то говорим юзеру прямо У ТЕБЯ ДЖАВА ХУЙНЯ ИДИ МЕНЯЙ
+	//	if( wcsstr( path, L"jre_legacy" ) && wcsstr( path, L"mojang_jre" ) )
+	//	{
+	//		jvm->DestroyJavaVM( );
+	//		MessageBoxW( 0, L"Ваша версия Java не работает с DeadCode. Скачайте новую с https://crystalpvp.ru/deadcode/java\n"
+	//						L"Гайд по установке в TL Legacy: https://crystalpvp.ru/deadcode/guide.png",
+	//						L"jewnative - error",  MB_OK );
+	//	}
+	//}
+	const auto System = env->FindClass( "java/lang/System" );
+	const auto getProperty = env->GetStaticMethodID( System, "getProperty", "(Ljava/lang/String;)Ljava/lang/String;" );
+	const auto javaversion_jstr = ( jstring )env->CallStaticObjectMethod( System, getProperty, env->NewStringUTF( "java.version" ) );
+
+	// конвертируем в std::string
+	const auto cstrversion = env->GetStringUTFChars( javaversion_jstr, 0 );
+	std::string version = cstrversion;
+	env->ReleaseStringUTFChars( javaversion_jstr, cstrversion );
+
+	// если джава хуевая (в тл легаси по умолчанию стоит 8u51) то говорим юзеру прямо У ТЕБЯ ДЖАВА ХУЙНЯ ИДИ МЕНЯЙ
+	if( version == "1.8.0_51" )
+	{
+		util::WriteError( );
+		speak( "Bad java version" );
+		MessageBoxW( 0, L"Ваша версия Java не работает с DeadCode. Скачайте новую с https://crystalpvp.ru/deadcode/java.php\n"
+						L"Гайд по установке в TL Legacy: https://crystalpvp.ru/deadcode/guide.png",
+						L"jewnative - error", MB_OK | MB_ICONWARNING | MB_SYSTEMMODAL );
+		exit( 1 );
+		return false;
+	}
+
+	//speak( "version [ %s ]", version.c_str( ) );
 
 	// ищем класслоадер майна в который зарегистрируем классы для отключения ссл проверок
 	// класслоадер можно и не искать, но мне похуй у меня уже есть код для этого
@@ -290,7 +331,7 @@ bool HookJVM( )
 
 	// отключаем ссл проверки с помощью классов которые мы только что зарегистрировали
 	const auto sslresult = env->CallStaticBooleanMethod( DisableSSLCheck_class,
-							env->GetStaticMethodID( DisableSSLCheck_class, "disable", "()Z" ) );
+														 env->GetStaticMethodID( DisableSSLCheck_class, "disable", "()Z" ) );
 	if( !sslresult )
 	{
 		speak( "[hook] Failed to disable SSL checks" );
@@ -308,11 +349,11 @@ bool HookJVM( )
 	if( !original_GetStaticMethodID ) return false;
 
 	original_CallNonvirtualVoidMethodV = Hook< CallNonvirtualVoidMethodVFn >( "CallNonvirtualVoidMethodV",
-												env->functions->CallNonvirtualVoidMethodV, hooked_CallNonvirtualVoidMethodV );
+																			  env->functions->CallNonvirtualVoidMethodV, hooked_CallNonvirtualVoidMethodV );
 	if( !original_CallNonvirtualVoidMethodV ) return false;
-	
+
 	original_CallStaticObjectMethodV = Hook< CallStaticObjectMethodVFn >( "CallStaticObjectMethodV",
-												env->functions->CallStaticObjectMethodV, hooked_CallStaticObjectMethodV );
+																		  env->functions->CallStaticObjectMethodV, hooked_CallStaticObjectMethodV );
 	if( !original_CallStaticObjectMethodV ) return false;
 
 	original_DefineClass = Hook< DefineClassFn >( "DefineClass", defineClass1, hooked_DefineClass );

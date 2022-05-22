@@ -35,6 +35,20 @@ void CheckFolders( )
 		util::PrintOk( );
 }
 
+void CopyHook( )
+{
+	wprintf( L"Копируем новый hook.dll..." );
+
+	if( std::filesystem::copy_file( "hook.dll", "C:/DeadCode/Libs/hook.dll" ) )
+		util::PrintOk( );
+	else
+	{
+		util::PrintError( );
+		system( "pause" );
+		exit( 1 );
+	}
+}
+
 void CheckFiles( )
 {
 	wprintf( L"Проверка файлов..." );
@@ -138,6 +152,42 @@ void CheckFiles( )
 		else
 			util::PrintOk( );
 	}
+	else
+	{
+		const auto size1 = util::GetFileSize( "C:/DeadCode/Libs/hook.dll" );
+		const auto size2 = util::GetFileSize( "hook.dll" );
+
+		if( size1 != size2 )
+		{
+			if( !fail )
+			{
+				util::PrintError( );
+				fail = true;
+			}
+
+			std::filesystem::remove( "C:/DeadCode/Libs/hook.dll" );
+			exit( 1 ); // ну да краш бывает
+		}
+		else
+		{
+			const auto pickedsize = min( size1, size2 );
+
+			const auto file1 = util::OpenFile( pickedsize, "C:/DeadCode/Libs/hook.dll" );
+			const auto file2 = util::OpenFile( pickedsize, "hook.dll" );
+
+			if( file1 && file2 )
+			{
+				const auto hash1 = util::CalculateMD5Hash( file1, pickedsize );
+				const auto hash2 = util::CalculateMD5Hash( file2, pickedsize );
+
+				if( hash1 != hash2 )
+				{
+					std::filesystem::remove( "C:/DeadCode/Libs/hook.dll" );
+					exit( 1 ); // ну да краш бывает
+				}
+			}
+		}
+	}
 
 	if( !fail )
 		util::PrintOk( );
@@ -155,23 +205,26 @@ void CheckPorts( )
 {
 	wprintf( L"Проверка портов..." );
 
-	const bool p80 = util::IsPortInUse( 80 );
-	const bool p443 = util::IsPortInUse( 443 );
+	const bool p1 = util::IsPortInUse( 48888 );
+	const bool p2 = util::IsPortInUse( 49999 );
 
-	if( !p80 && !p443 )
+	if( !p1 && !p2 )
 		util::PrintOk( );
 	else
 	{
 		util::PrintError( );
 
-		if( p80 )
-			wprintf( L"Порт 80 занят, сервер эмулятор не сможет запуститься\n" );
+		if( p1 )
+			wprintf( L"Порт 48888 занят\n" );
 
-		if( p443 )
-			wprintf( L"Порт 443 занят, сервер эмулятор не сможет запуститься\n" );
+		if( p2 )
+			wprintf( L"Порт 49999 занят\n" );
 
-		system( "pause" );
-		exit( 1 );
+		wprintf( L"Попробуем все равно запуститься, но если не получится можете попробовать отключить антивирус (если он имеется)\n" );
+
+		Sleep( 1000 );
+		//system( "pause" );
+		//exit( 1 );
 	}
 }
 

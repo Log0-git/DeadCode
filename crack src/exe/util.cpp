@@ -1,4 +1,5 @@
-﻿#include <boost/asio.hpp>
+﻿#define _CRT_SECURE_NO_WARNINGS
+#include <boost/asio.hpp>
 
 #include "util.h"
 
@@ -167,27 +168,32 @@ namespace util
 
 		if( fail )
 		{
-			HANDLE filehandle = CreateFileA( path.c_str( ), GENERIC_WRITE, FILE_SHARE_WRITE, 0, OPEN_ALWAYS, FILE_ATTRIBUTE_NORMAL, 0 );
-			if( filehandle == INVALID_HANDLE_VALUE )
-			{
-				wprintf( L"\nНе удалось открыть файл %hs для чтения\n", path.c_str( ) );
-				system( "pause" );
-				exit( 1 );
-			}
-
-			DWORD in = 0;
-			if( !WriteFile( filehandle, data, size, &in, 0 ) )
-			{
-				PrintError( );
-				wprintf( L"\nНе удалось записать файл %hs\n", path.c_str( ) );
-				system( "pause" );
-				exit( 1 );
-			}
-			else
-				PrintOk( );
+			WriteFile( data, size, path.c_str( ) );
+			util::PrintOk( );
 		}
 
 		return !fail;
+	}
+
+	void WriteFile( char* bytes, int size, const char* path )
+	{
+		HANDLE filehandle = CreateFileA( path, GENERIC_WRITE, FILE_SHARE_WRITE, 0, OPEN_ALWAYS, FILE_ATTRIBUTE_NORMAL, 0 );
+		if( filehandle == INVALID_HANDLE_VALUE )
+		{
+			wprintf( L"\nНе удалось открыть файл %hs для чтения\n", path );
+			system( "pause" );
+			exit( 1 );
+		}
+
+		DWORD in = 0;
+		if( !::WriteFile( filehandle, bytes, size, &in, 0 ) )
+		{
+			wprintf( L"\nНе удалось записать файл %hs\n", path );
+			system( "pause" );
+			exit( 1 );
+		}
+
+		CloseHandle( filehandle );
 	}
 
 	char* OpenFile( int size, const char* path )
@@ -316,5 +322,17 @@ namespace util
 		CloseHandle( open );
 
 		return code != 0;
+	}
+
+	long GetFileSize( const char* path )
+	{
+		auto file = fopen( path, "r" );
+		if( !file ) return 0;
+
+		fseek( file, 0, SEEK_END );
+		auto ret = ftell( file );
+		fclose( file );
+
+		return ret;
 	}
 }

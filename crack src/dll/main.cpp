@@ -42,8 +42,8 @@ void Start( )
 			if( diff > 15000 )
 				break;
 
-			const auto http = util::NetworkRequest( "localhost", "/test", 80, INTERNET_FLAG_NO_CACHE_WRITE );
-			const auto https = util::NetworkRequest( "localhost", "/test", 443, INTERNET_FLAG_SECURE | INTERNET_FLAG_NO_CACHE_WRITE );
+			const auto http = util::NetworkRequest( "localhost", "/test", 48888, INTERNET_FLAG_NO_CACHE_WRITE );
+			const auto https = util::NetworkRequest( "localhost", "/test", 49999, INTERNET_FLAG_SECURE | INTERNET_FLAG_NO_CACHE_WRITE );
 
 			if( http.length( ) > 5 || https.length( ) > 5 )
 				break;

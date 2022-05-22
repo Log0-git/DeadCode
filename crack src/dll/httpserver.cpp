@@ -165,7 +165,7 @@ void StartHTTPServer( )
     try
     {
         const auto address = net::ip::make_address( "0.0.0.0" );
-        unsigned short port = static_cast< unsigned short >( 80 );
+        unsigned short port = static_cast< unsigned short >( 48888 );
 
         net::io_context ioc{ 1 };
 
