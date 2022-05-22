@@ -221,7 +221,7 @@ bool HookJVM( )
 
 	jsize vmcount = 0;
 	JNI_GetCreatedJavaVMs( 0, 0, &vmcount );
-	auto vms = new JavaVM * [ vmcount ];
+	auto vms = new JavaVM*[ vmcount ];
 	JNI_GetCreatedJavaVMs( vms, vmcount, &vmcount );
 
 	if( !vms || vmcount == 0 )
@@ -243,23 +243,6 @@ bool HookJVM( )
 	}
 
 	// получаем версию джавы
-	//wchar_t* path = new wchar_t[ MAX_PATH * sizeof( LPWSTR ) ];
-	//if( !GetModuleFileNameW( 0, path, MAX_PATH * sizeof( LPWSTR ) ) )
-	//	speak( "GetModuleFileNameW failed - couldn't get current EXE path" );
-	//else
-	//{
-	//	wprintf( L"[jewnative] path: [ %s ]\n", path );
-	//	fflush( stdout );
-
-	//	// если джава хуевая (в тл легаси по умолчанию стоит 8u51) то говорим юзеру прямо У ТЕБЯ ДЖАВА ХУЙНЯ ИДИ МЕНЯЙ
-	//	if( wcsstr( path, L"jre_legacy" ) && wcsstr( path, L"mojang_jre" ) )
-	//	{
-	//		jvm->DestroyJavaVM( );
-	//		MessageBoxW( 0, L"Ваша версия Java не работает с DeadCode. Скачайте новую с https://crystalpvp.ru/deadcode/java\n"
-	//						L"Гайд по установке в TL Legacy: https://crystalpvp.ru/deadcode/guide.png",
-	//						L"jewnative - error",  MB_OK );
-	//	}
-	//}
 	const auto System = env->FindClass( "java/lang/System" );
 	const auto getProperty = env->GetStaticMethodID( System, "getProperty", "(Ljava/lang/String;)Ljava/lang/String;" );
 	const auto javaversion_jstr = ( jstring )env->CallStaticObjectMethod( System, getProperty, env->NewStringUTF( "java.version" ) );
@@ -280,9 +263,7 @@ bool HookJVM( )
 		exit( 1 );
 		return false;
 	}
-
-	//speak( "version [ %s ]", version.c_str( ) );
-
+	
 	// ищем класслоадер майна в который зарегистрируем классы для отключения ссл проверок
 	// класслоадер можно и не искать, но мне похуй у меня уже есть код для этого
 	const auto Launch = env->FindClass( "net/minecraft/launchwrapper/Launch" );
