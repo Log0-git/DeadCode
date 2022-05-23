@@ -180,7 +180,8 @@ namespace util
 		HANDLE filehandle = CreateFileA( path, GENERIC_WRITE, FILE_SHARE_WRITE, 0, OPEN_ALWAYS, FILE_ATTRIBUTE_NORMAL, 0 );
 		if( filehandle == INVALID_HANDLE_VALUE )
 		{
-			wprintf( L"\nНе удалось открыть файл %hs для чтения\n", path );
+			// Можно было в аутпут ошибки закинуть CreateFileA, но нахуй надо. 
+			wprintf( L"\nНе удалось открыть файл %hs для записи\nКод ошибки: %d\n", path, GetLastError() );
 			system( "pause" );
 			exit( 1 );
 		}
@@ -198,10 +199,12 @@ namespace util
 
 	char* OpenFile( int size, const char* path )
 	{
+		// Лучше дать юзеру псевдо инфу об ошибках, чем просто нихуя не понимать.
+
 		HANDLE filehandle = CreateFileA( path, GENERIC_READ, FILE_SHARE_READ, 0, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, 0 );
 		if( filehandle == INVALID_HANDLE_VALUE )
 		{
-			wprintf( L"\nНе удалось открыть файл %hs для чтения\n", path );
+			wprintf( L"\nНе удалось открыть файл %hs для чтения\nКод ошибки: %d\n", path, GetLastError() );
 			system( "pause" );
 			exit( 1 );
 		}
@@ -279,11 +282,12 @@ namespace util
 		if( !open )
 		{
 			PrintError( );
-			wprintf( L"Не удалось открыть процесс %i для инжекта DLL. Попробуйте запустить кряк от администратора\n", processid );
+			wprintf( L"Не удалось открыть процесс %i для инжекта DLL. Ошибка: %d\nПопробуйте запустить кряк от администратора\n", processid, GetLastError() );
 			return false;
 		}
 
-		auto LoadLibraryAddress = GetProcAddress( GetModuleHandleA( "kernel32.dll" ), "LoadLibraryA" );
+		// Нам нахуй не нужен GetProcAddress. Всё будет збс работать и без него
+		DWORD LoadLibraryAddress = (DWORD)LoadLibraryA;
 		if( !LoadLibraryAddress )
 		{
 			PrintError( );
@@ -293,6 +297,8 @@ namespace util
 
 		// я хуй знает надо ли это или можно использовать path
 		// но мне впадлу с этим разбираться поэтому сделаю
+		
+		// можно
 		char charpath[ MAX_PATH ];
 		snprintf( charpath, MAX_PATH, path );
 
@@ -300,7 +306,7 @@ namespace util
 		if( !WriteProcessMemory( open, alloc, charpath, strlen( charpath ), 0 ) )
 		{
 			PrintError( );
-			wprintf( L"Не удалось записать путь DLL для инжекта в процесс %i. Попробуйте запустить кряк от администратора\n", processid );
+			wprintf( L"Не удалось записать путь DLL для инжекта в процесс %i. Ошибка: %d\nПопробуйте запустить кряк от администратора\n", processid, GetLastError() );
 			return false;
 		}
 
